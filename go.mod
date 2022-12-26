@@ -2,6 +2,12 @@ module github.com/tikv/client-go/v2
 
 go 1.18
 
+replace (
+	github.com/pingcap/kvproto => github.com/nolouch/kvproto v0.0.0-20221220074114-39f3378735d2
+	github.com/tikv/pd => github.com/tidblabs/pd v0.0.0-20221226085939-3b2f71ab2ba0
+	github.com/tikv/pd/client => github.com/tidblabs/pd/client v0.0.0-20221226085939-3b2f71ab2ba0
+)
+
 require (
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548
 	github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2
@@ -20,7 +26,7 @@ require (
 	github.com/prometheus/client_model v0.2.0
 	github.com/stathat/consistent v1.0.0
 	github.com/stretchr/testify v1.8.0
-	github.com/tikv/pd v0.0.0-20221031025758-80f0d8ca4d07
+	github.com/tikv/pd v0.0.0-00010101000000-000000000000
 	github.com/tikv/pd/client v0.0.0-20221031025758-80f0d8ca4d07
 	github.com/twmb/murmur3 v1.1.3
 	go.etcd.io/etcd/api/v3 v3.5.2
@@ -59,9 +65,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	stathat.com/c/consistent v1.0.0 // indirect
 )
-
-replace github.com/tikv/pd => github.com/tidblabs/pd v0.0.0-20221222021041-db3be941c254
-
-replace github.com/tikv/pd/client => github.com/tidblabs/pd/client v0.0.0-20221222021041-db3be941c254
-
-replace github.com/pingcap/kvproto => github.com/nolouch/kvproto v0.0.0-20221220074114-39f3378735d2
