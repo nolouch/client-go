@@ -267,6 +267,10 @@ func (c *pdClient) SplitRegions(ctx context.Context, splitKeys [][]byte, opts ..
 	return nil, nil
 }
 
+// func (c *pdClient) SplitAndScatterRegions(ctx context.Context, splitKeys [][]byte, opts ...pd.RegionsOption) (*pdpb.SplitAndScatterRegionsResponse, error) {
+// 	return nil, nil
+// }
+
 func (c *pdClient) GetOperator(ctx context.Context, regionID uint64) (*pdpb.GetOperatorResponse, error) {
 	return &pdpb.GetOperatorResponse{Status: pdpb.OperatorStatus_SUCCESS}, nil
 }
@@ -292,3 +296,7 @@ func (c *pdClient) LoadKeyspace(ctx context.Context, name string) (*keyspacepb.K
 func (c *pdClient) WatchKeyspaces(ctx context.Context) (chan []*keyspacepb.KeyspaceMeta, error) {
 	return nil, nil
 }
+
+// func (c *pdClient) TokenBucket(ctx context.Context, req *pdpb.TokenBucketRequest) (*pdpb.TokenBucketResponse, error) {
+// 	return nil, nil
+// }

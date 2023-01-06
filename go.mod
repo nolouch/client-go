@@ -7,6 +7,7 @@ replace github.com/tikv/pd/client => github.com/tidbcloud/pd-cse/client v0.0.0-2
 require (
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548
 	github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2
+	github.com/elastic/gosigar v0.14.2
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.2
 	github.com/google/btree v1.1.2
@@ -51,10 +52,10 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.2 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
-	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781 // indirect
-	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
-	golang.org/x/text v0.3.6 // indirect
-	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
+	golang.org/x/net v0.0.0-20211008194852-3b03d305991f // indirect
+	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
+	golang.org/x/text v0.3.7 // indirect
+	google.golang.org/genproto v0.0.0-20210624195500-8bfb893ecb84 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
