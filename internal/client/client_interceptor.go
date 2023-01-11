@@ -43,14 +43,15 @@ func (r interceptedClient) SendRequest(ctx context.Context, addr string, req *ti
 		tenantRPCInterceptor = func(next interceptor.RPCInterceptorFunc) interceptor.RPCInterceptorFunc {
 			return func(target string, req *tikvrpc.Request) (*tikvrpc.Response, error) {
 				reqInfo := resourcegroup.MakeRequestInfo(req)
-				err := TenantKVControllor.OnRequestWait(ctx, "demo", reqInfo)
+				groupName := req.GetResourceGroupName()
+				err := TenantKVControllor.OnRequestWait(ctx, groupName, reqInfo)
 				if err != nil {
 					return nil, err
 				}
 				resp, err := next(target, req)
 				if resp != nil {
 					respInfo := resourcegroup.MakeResponseInfo(resp)
-					TenantKVControllor.OnResponse(context.Background(), "demo", reqInfo, respInfo)
+					TenantKVControllor.OnResponse(context.Background(), groupName, reqInfo, respInfo)
 				}
 				return resp, err
 			}
