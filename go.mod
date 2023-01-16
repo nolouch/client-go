@@ -3,8 +3,8 @@ module github.com/tikv/client-go/v2
 go 1.18
 
 replace (
-	github.com/tikv/pd => github.com/CabinfeverB/pd v1.1.0-beta.0.20230111164927-49a78a80a7ba
-	github.com/tikv/pd/client => github.com/CabinfeverB/pd/client v0.0.0-20230111164927-49a78a80a7ba
+	github.com/tikv/pd => github.com/nolouch/pd v1.1.0-beta.0.20230115175133-c31b6f77835b
+	github.com/tikv/pd/client => github.com/nolouch/pd/client v0.0.0-20230115175133-c31b6f77835b
 )
 
 require (

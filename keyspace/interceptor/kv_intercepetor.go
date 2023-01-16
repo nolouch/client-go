@@ -3,7 +3,7 @@ package interceptor
 import (
 	"context"
 
-	resource "github.com/tikv/pd/pkg/mcs/resource_manager/tenant_client"
+	resource "github.com/tikv/pd/pkg/mcs/resource_manager/client"
 )
 
 type ResourceSideKVInterceptor interface {
