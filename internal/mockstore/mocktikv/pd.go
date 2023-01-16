@@ -300,10 +300,10 @@ func (c *pdClient) ListResourceGroups(ctx context.Context) ([]*resource_manager.
 func (c *pdClient) GetResourceGroup(ctx context.Context, resourceGroupName string) (*resource_manager.ResourceGroup, error) {
 	return nil, nil
 }
-func (c *pdClient) AddResourceGroup(ctx context.Context, resourceGroupName string, settings *resource_manager.GroupSettings) (string, error) {
+func (c *pdClient) AddResourceGroup(ctx context.Context, settings *resource_manager.ResourceGroup) (string, error) {
 	return "", nil
 }
-func (c *pdClient) ModifyResourceGroup(ctx context.Context, resourceGroupName string, settings *resource_manager.GroupSettings) (string, error) {
+func (c *pdClient) ModifyResourceGroup(ctx context.Context, settings *resource_manager.ResourceGroup) (string, error) {
 	return "", nil
 }
 func (c *pdClient) DeleteResourceGroup(ctx context.Context, resourceGroupName string) (string, error) {
