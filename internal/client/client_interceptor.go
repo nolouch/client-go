@@ -16,9 +16,11 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 	"time"
 
+	"github.com/opentracing/opentracing-go"
 	"github.com/tikv/client-go/v2/internal/resourcecontrol"
 	"github.com/tikv/client-go/v2/tikvrpc"
 	"github.com/tikv/client-go/v2/tikvrpc/interceptor"
@@ -104,8 +106,23 @@ func buildResourceControlInterceptor(
 			if reqInfo.Bypass() || resourceControlInterceptor.IsBackgroundRequest(ctx, resourceGroupName, req.RequestSource) {
 				return next(target, req)
 			}
+			var (
+				fspan   opentracing.Span
+				spanRPC opentracing.Span
+			)
+			if span := opentracing.SpanFromContext(ctx); span != nil && span.Tracer() != nil {
+				fspan = span.Tracer().StartSpan(fmt.Sprintf("RC.Controller, region ID: %d, type: %s", req.RegionId, req.Type), opentracing.ChildOf(span.Context()))
+				defer fspan.Finish()
+				ctx = opentracing.ContextWithSpan(ctx, fspan)
 
+			}
 			consumption, penalty, waitDuration, priority, err := resourceControlInterceptor.OnRequestWait(ctx, resourceGroupName, reqInfo)
+			if fspan != nil {
+				spanRPC = fspan.Tracer().StartSpan(fmt.Sprintf("RC.OnRequestWait, RRU %.4f WRU %.4f, wait %s", consumption.RRU, consumption.WRU, waitDuration), opentracing.ChildOf(fspan.Context()))
+				// spanRPC.SetTag("B-RU", consumption.RRU+consumption.WRU)
+				// spanRPC.LogFields(log.String("event", fmt.Sprintf("consumed RRU %.2f, WRU %.2f", consumption.RRU, consumption.WRU)))
+				spanRPC.Finish()
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -125,6 +142,13 @@ func buildResourceControlInterceptor(
 			if resp != nil {
 				respInfo := resourcecontrol.MakeResponseInfo(resp)
 				consumption, err = resourceControlInterceptor.OnResponse(resourceGroupName, reqInfo, respInfo)
+				if fspan != nil {
+					spanRPC = fspan.Tracer().StartSpan(fmt.Sprintf("RC.OnResponse, RRU %.4f WRU %.4f", consumption.RRU, consumption.WRU), opentracing.ChildOf(fspan.Context()))
+					// spanRPC.SetTag("end-RU", consumption.RRU+consumption.WRU)
+					// spanRPC.LogFields(log.String("event", fmt.Sprintf("consumed RRU %.2f, WRU %.2f", consumption.RRU, consumption.WRU)))
+					spanRPC.Finish()
+					spanRPC = nil
+				}
 				if err != nil {
 					return nil, err
 				}
