@@ -337,6 +337,10 @@ type ExecDetails struct {
 	BackoffDuration    int64
 	WaitKVRespDuration int64
 	WaitPDRespDuration int64
+	LocalOutBytes      int64
+	LocalInBytes       int64
+	RemoteOutBytes     int64
+	RemoteInBytes      int64
 }
 
 // FormatDuration uses to format duration, this function will prune precision before format duration.

@@ -841,6 +841,7 @@ func (s *RegionRequestSender) SendReqCtx(
 		if staleReadCollector != nil && s.replicaSelector != nil && s.replicaSelector.target != nil {
 			isLocalTraffic = s.replicaSelector.target.store.IsLabelsMatch(s.replicaSelector.option.labels)
 			staleReadCollector.onReq(req, isLocalTraffic)
+
 		}
 
 		logutil.Eventf(bo.GetCtx(), "send %s request to region %d at %s", req.Type, regionID.id, rpcCtx.Addr)
@@ -927,6 +928,7 @@ func (s *RegionRequestSender) SendReqCtx(
 		if staleReadCollector != nil {
 			staleReadCollector.onResp(req.Type, resp, isLocalTraffic)
 		}
+		execDetails := ctx.Value(util.ExecDetailsKey)
 		return resp, rpcCtx, retryTimes, nil
 	}
 }
@@ -1803,6 +1805,66 @@ func (s *staleReadMetricsCollector) onResp(tp tikvrpc.CmdType, resp *tikvrpc.Res
 		metrics.StaleReadLocalInBytes.Add(float64(size))
 	} else {
 		metrics.StaleReadRemoteInBytes.Add(float64(size))
+	}
+}
+
+type networkCollector struct {
+}
+
+func (s *networkCollector) onReq(req *tikvrpc.Request, details util.ExecDetails, isLocalTraffic bool) {
+	size := 0
+	switch req.Type {
+	case tikvrpc.CmdGet:
+		size = req.Get().Size()
+	case tikvrpc.CmdBatchGet:
+		size = req.BatchGet().Size()
+	case tikvrpc.CmdScan:
+		size = req.Scan().Size()
+	case tikvrpc.CmdCop:
+		size = req.Cop().Size()
+	case tikvrpc.CmdPrewrite:
+		size = req.Prewrite().Size()
+	case tikvrpc.CmdCommit:
+		size = req.Commit().Size()
+	case tikvrpc.CmdPessimisticLock:
+		size = req.PessimisticLock().Size()
+	default:
+		// ignore non-read requests
+		return
+	}
+	size += req.Context.Size()
+	if isLocalTraffic {
+		atomic.AddInt64(&details.LocalOutBytes, int64(size))
+	} else {
+		atomic.AddInt64(&details.RemoteOutBytes, int64(size))
+	}
+}
+
+func (s *networkCollector) onResp(tp tikvrpc.CmdType, resp *tikvrpc.Response, details util.ExecDetails, isLocalTraffic bool) {
+	size := 0
+	switch tp {
+	case tikvrpc.CmdGet:
+		size += resp.Resp.(*kvrpcpb.GetResponse).Size()
+	case tikvrpc.CmdBatchGet:
+		size += resp.Resp.(*kvrpcpb.BatchGetResponse).Size()
+	case tikvrpc.CmdScan:
+		size += resp.Resp.(*kvrpcpb.ScanResponse).Size()
+	case tikvrpc.CmdCop:
+		size += resp.Resp.(*coprocessor.Response).Size()
+	case tikvrpc.CmdPrewrite:
+		size += resp.Resp.(*kvrpcpb.PrewriteResponse).Size()
+	case tikvrpc.CmdCommit:
+		size += resp.Resp.(*kvrpcpb.CommitResponse).Size()
+	case tikvrpc.CmdPessimisticLock:
+		size += resp.Resp.(*kvrpcpb.PessimisticLockResponse).Size()
+	default:
+		// ignore non-read requests
+		return
+	}
+	if isLocalTraffic {
+		atomic.AddInt64(&details.LocalInBytes, int64(size))
+	} else {
+		atomic.AddInt64(&details.RemoteInBytes, int64(size))
 	}
 }
 
