@@ -333,14 +333,18 @@ func (ld *LockKeysDetails) Clone() *LockKeysDetails {
 
 // ExecDetails contains execution detail info.
 type ExecDetails struct {
-	BackoffCount       int64
-	BackoffDuration    int64
-	WaitKVRespDuration int64
-	WaitPDRespDuration int64
-	LocalOutBytes      int64
-	LocalInBytes       int64
-	RemoteOutBytes     int64
-	RemoteInBytes      int64
+	BackoffCount              int64
+	BackoffDuration           int64
+	WaitKVRespDuration        int64
+	WaitPDRespDuration        int64
+	BytesSendKVTotal          int64
+	BytesReceivedKVTotal      int64
+	BytesSendKVCrossZone      int64
+	BytesReceivedKVCrossZone  int64
+	BytesSendMPPTotal         int64
+	BytesReceivedMPPTotal     int64
+	BytesSendMPPCrossZone     int64
+	BytesReceivedMPPCrossZone int64
 }
 
 // FormatDuration uses to format duration, this function will prune precision before format duration.

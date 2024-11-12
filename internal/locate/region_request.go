@@ -836,12 +836,17 @@ func (s *RegionRequestSender) SendReqCtx(
 			resp, err = tikvrpc.GenRegionErrorResp(req, &errorpb.Error{EpochNotMatch: &errorpb.EpochNotMatch{}})
 			return resp, nil, retryTimes, err
 		}
-
+		execDetails := bo.GetCtx().Value(util.ExecDetailsKey)
+		trafficCollector := &networkCollector{}
 		var isLocalTraffic bool
+		isTiflashTarget := et == tikvrpc.TiFlash
 		if staleReadCollector != nil && s.replicaSelector != nil && s.replicaSelector.target != nil {
 			isLocalTraffic = s.replicaSelector.target.store.IsLabelsMatch(s.replicaSelector.option.labels)
 			staleReadCollector.onReq(req, isLocalTraffic)
-
+		}
+		if execDetails != nil {
+			detail := execDetails.(*util.ExecDetails)
+			trafficCollector.onReq(req, detail, isLocalTraffic, isTiflashTarget)
 		}
 
 		logutil.Eventf(bo.GetCtx(), "send %s request to region %d at %s", req.Type, regionID.id, rpcCtx.Addr)
@@ -928,7 +933,11 @@ func (s *RegionRequestSender) SendReqCtx(
 		if staleReadCollector != nil {
 			staleReadCollector.onResp(req.Type, resp, isLocalTraffic)
 		}
-		execDetails := ctx.Value(util.ExecDetailsKey)
+
+		if execDetails != nil {
+			detail := execDetails.(*util.ExecDetails)
+			trafficCollector.onResp(req.Type, resp, detail, isLocalTraffic, isTiflashTarget)
+		}
 		return resp, rpcCtx, retryTimes, nil
 	}
 }
@@ -1811,7 +1820,7 @@ func (s *staleReadMetricsCollector) onResp(tp tikvrpc.CmdType, resp *tikvrpc.Res
 type networkCollector struct {
 }
 
-func (s *networkCollector) onReq(req *tikvrpc.Request, details util.ExecDetails, isLocalTraffic bool) {
+func (s *networkCollector) onReq(req *tikvrpc.Request, details *util.ExecDetails, isLocalTraffic bool, isTiflashTarget bool) {
 	size := 0
 	switch req.Type {
 	case tikvrpc.CmdGet:
@@ -1829,18 +1838,26 @@ func (s *networkCollector) onReq(req *tikvrpc.Request, details util.ExecDetails,
 	case tikvrpc.CmdPessimisticLock:
 		size = req.PessimisticLock().Size()
 	default:
-		// ignore non-read requests
+		// ignore others
 		return
 	}
 	size += req.Context.Size()
-	if isLocalTraffic {
-		atomic.AddInt64(&details.LocalOutBytes, int64(size))
+	var total, crossZone *int64
+	if isTiflashTarget {
+		total = &details.BytesSendMPPTotal
+		crossZone = &details.BytesSendMPPCrossZone
 	} else {
-		atomic.AddInt64(&details.RemoteOutBytes, int64(size))
+		total = &details.BytesSendKVTotal
+		crossZone = &details.BytesSendKVCrossZone
+	}
+
+	atomic.AddInt64(total, int64(size))
+	if !isLocalTraffic {
+		atomic.AddInt64(crossZone, int64(size))
 	}
 }
 
-func (s *networkCollector) onResp(tp tikvrpc.CmdType, resp *tikvrpc.Response, details util.ExecDetails, isLocalTraffic bool) {
+func (s *networkCollector) onResp(tp tikvrpc.CmdType, resp *tikvrpc.Response, details *util.ExecDetails, isLocalTraffic bool, isTiflashTarget bool) {
 	size := 0
 	switch tp {
 	case tikvrpc.CmdGet:
@@ -1858,13 +1875,21 @@ func (s *networkCollector) onResp(tp tikvrpc.CmdType, resp *tikvrpc.Response, de
 	case tikvrpc.CmdPessimisticLock:
 		size += resp.Resp.(*kvrpcpb.PessimisticLockResponse).Size()
 	default:
-		// ignore non-read requests
+		// ignore others
 		return
 	}
-	if isLocalTraffic {
-		atomic.AddInt64(&details.LocalInBytes, int64(size))
+	var total, crossZone *int64
+	if isTiflashTarget {
+		total = &details.BytesReceivedMPPTotal
+		crossZone = &details.BytesReceivedMPPCrossZone
 	} else {
-		atomic.AddInt64(&details.RemoteInBytes, int64(size))
+		total = &details.BytesReceivedKVTotal
+		crossZone = &details.BytesReceivedKVCrossZone
+	}
+
+	atomic.AddInt64(total, int64(size))
+	if !isLocalTraffic {
+		atomic.AddInt64(crossZone, int64(size))
 	}
 }
 
